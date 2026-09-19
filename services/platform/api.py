@@ -37,7 +37,8 @@ async def development_auth(request: Request, call_next):
     token = os.getenv('QA_API_TOKEN')
     if request.client and request.client.host not in ('127.0.0.1', '::1', 'testclient') and os.getenv('QA_ALLOW_PUBLIC_DEV_API') != '1':
         return Response(status_code=403, content='Development API restricted to loopback')
-    if token and request.url.path != '/health':
+    # /otlp has its own ingest token (QA_OTLP_INGEST_TOKEN); the runner's exporter sends no API token.
+    if token and request.url.path != '/health' and not request.url.path.startswith('/otlp/'):
         supplied = request.headers.get('x-qa-api-token', '')
         basic = request.headers.get('authorization', '')
         if basic.startswith('Basic '):
@@ -210,24 +211,25 @@ def stored_trace(trace_id: str):
     return {'trace_id':trace_id,'spans':spans}
 
 
+STATIC = Path(__file__).resolve().parent / 'static'
+
+
+@app.get('/', response_class=HTMLResponse)
+@app.get('/app', response_class=HTMLResponse)
 @app.get('/dashboard', response_class=HTMLResponse)
-def dashboard():
-    rows = STORE.list(limit=50)
-    colors = {'PASS': '#166534', 'FAIL': '#991b1b', 'INCONCLUSIVE': '#854d0e', 'INFRA_ERROR': '#64748b'}
-    body = ''.join('<tr><td>'+html.escape(r['created_at'])+'</td><td>'+html.escape(r['project_id'])+
-                   '</td><td>'+html.escape(r['scenario_id'])+'</td><td style="color:'+
-                   colors.get(r['verdict'], '#111')+';font-weight:700">'+html.escape(r['verdict'])+
-                   '</td><td><code>'+html.escape(r['trace_id'])+'</code></td><td><code>'+
-                   html.escape(r['run_id'])+'</code></td></tr>' for r in rows)
-    return '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ProofHound · Runs</title><style>
-    body{font-family:system-ui,sans-serif;max-width:1200px;margin:3rem auto;padding:0 1rem;color:#1b2533}
-    header{display:flex;align-items:baseline;justify-content:space-between}h1{font-size:2rem}p{color:#586879}
-    table{width:100%;border-collapse:collapse;overflow:auto;display:block}th,td{padding:.8rem;border-bottom:1px solid #dde3ea;text-align:left;white-space:nowrap}
-    th{background:#edf2f7}code{font-size:.75rem}a{color:#235eaa}</style></head><body>
-    <header><h1>ProofHound</h1><span>Local development dashboard</span></header>
-    <p>Evidence-backed QA run history. API: <a href="/docs">OpenAPI documentation</a></p>
-    <table><thead><tr><th>Time (UTC)</th><th>Project</th><th>Scenario</th><th>Verdict</th><th>Trace ID</th><th>Run ID</th></tr></thead>
-    <tbody>''' + body + '''</tbody></table></body></html>'''
+def web_app():
+    # Single-page app; all data comes from /api/* and is rendered as text, never as HTML.
+    return HTMLResponse((STATIC / 'index.html').read_text(), headers={
+        'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'"})
+
+
+from fastapi.staticfiles import StaticFiles
+from services.platform.app_api import router as app_router
+from services.telemetry.receiver import app as otlp_receiver
+app.mount('/static', StaticFiles(directory=STATIC), name='static')
+app.include_router(app_router)
+app.mount('/otlp', otlp_receiver)
 
 # Intentionally limited A2A surface, authenticated by the same development middleware.
 from services.platform.a2a import router as a2a_router

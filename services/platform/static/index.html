@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProofHound</title>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <a class="brand" href="#/">ProofHound</a>
+    <p class="tag">Evidence-based QA</p>
+    <a href="#/" data-nav="overview">Overview</a>
+    <a href="#/sample" data-nav="sample">Sample app</a>
+    <a href="#/onboard" data-nav="onboard">1 · Onboard an app</a>
+    <a href="#/projects" data-nav="projects">2 · Workflows &amp; approvals</a>
+    <a href="#/runs" data-nav="runs">3 · Runs</a>
+    <a href="#/logs" data-nav="logs">4 · Logs</a>
+    <div class="side-foot"><button id="theme" type="button" class="ghost">Theme</button></div>
+  </nav>
+  <main id="view" tabindex="-1"></main>
+</div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

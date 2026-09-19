@@ -13,7 +13,7 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python scripts/validate_contracts.py
       # Browser tests run in their own job after installing Chromium.
-      - run: python -m pytest -q --ignore=tests/test_universal_ui.py --ignore=tests/test_correlate.py --ignore=tests/test_onboarding_ui.py
+      - run: python -m pytest -q --ignore=tests/test_universal_ui.py --ignore=tests/test_correlate.py --ignore=tests/test_onboarding_ui.py --ignore=tests/test_web_app.py
       - run: python -m benchmarks.benchmark
       - run: python -m services.platform.hacp_mailbox
   playwright-acceptance:
@@ -25,7 +25,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m playwright install --with-deps chromium
-      - run: python -m pytest -q tests/test_universal_ui.py tests/test_correlate.py tests/test_onboarding_ui.py
+      - run: python -m pytest -q tests/test_universal_ui.py tests/test_correlate.py tests/test_onboarding_ui.py tests/test_web_app.py
       - run: python -m pytest -q tests/test_engine.py -k chromium
       - run: python -m scripts.onboarding_demo
       - run: python -m scripts.ui_demo

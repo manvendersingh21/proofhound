@@ -10,3 +10,4 @@ playwright>=1.49,<2
 pytest>=8,<10
 PyYAML>=6,<7
 Pillow>=10,<13
+neo4j>=5,<7
